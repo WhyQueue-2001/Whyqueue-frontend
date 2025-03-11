@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:whyqueue/Screens/restro_dashboard.dart';
 import 'package:whyqueue/Screens/user_view.dart';
 import 'package:whyqueue/Screens/hotel_registration.dart';
 import 'package:whyqueue/Screens/user_registration.dart';
+import 'package:whyqueue/User/user_booking.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -151,6 +153,24 @@ class _LoginPageState extends State<LoginPage>
                         builder: (context) => RestaurantInputScreen()));
               },
               child: Text(" Register for Hotels"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => ReservationScreen()));
+              },
+              child: Text(" Book your Hotels"),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => RestaurantDashboard()));
+              },
+              child: Text("Hotels Dashboard"),
             ),
           ],
         ),
