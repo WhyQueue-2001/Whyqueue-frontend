@@ -172,7 +172,7 @@ class _LoginPageState extends State<LoginPage>
                     MaterialPageRoute(
                         builder: (context) => RestaurantDashboard()));
               },
-              child: Text("Hotels Dashboard"),
+              child: Text("Hotels Dashboard n"),
             ),
           ],
         ),
