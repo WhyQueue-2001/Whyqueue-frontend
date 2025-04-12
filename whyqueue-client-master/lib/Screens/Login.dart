@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:whyqueue/Screens/restro_dashboard.dart';
@@ -159,7 +160,8 @@ class _LoginPageState extends State<LoginPage>
                 Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => ReservationScreen()));
+                        builder: (context) =>
+                            ReservationScreen(hotelName: "")));
               },
               child: Text(" Book your Hotels"),
             ),
@@ -170,12 +172,81 @@ class _LoginPageState extends State<LoginPage>
                     MaterialPageRoute(
                         builder: (context) => RestaurantDashboard()));
               },
-              child: Text("Hotels Dashboard"),
+              child: Text("Hotels Dashboard n"),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _loginHotel(BuildContext context) async {
+    setState(() => _isLoading = true);
+
+    String username = _usernameController.text.trim();
+    String password = _passwordController.text.trim();
+
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please enter both username and password")),
+      );
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      // Firebase Database reference
+      DatabaseReference dbRef =
+          FirebaseDatabase.instance.ref().child("restaurants");
+
+      final snapshot = await dbRef.get();
+
+      if (snapshot.exists) {
+        bool credentialsMatch = false;
+        Map<String, dynamic>? hotelData;
+
+        // Iterate through all the restaurant entries
+        for (var child in snapshot.children) {
+          Map<String, dynamic> data =
+              Map<String, dynamic>.from(child.value as Map);
+
+          if (data['username'] == username && data['password'] == password) {
+            credentialsMatch = true;
+            hotelData = data; // Store hotel data for further use
+            break;
+          }
+        }
+
+        if (credentialsMatch) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Login successful!")),
+          );
+
+          // Navigate to hotel dashboard with hotel data
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) => RestaurantDashboard(
+                      hotelData: hotelData,
+                    )),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Invalid username or password")),
+          );
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("No hotels found in Firebase")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   Widget _buildPasswordLogin() {
@@ -185,20 +256,24 @@ class _LoginPageState extends State<LoginPage>
         TextField(
           controller: _usernameController,
           decoration: InputDecoration(
-              labelText: 'Username', border: OutlineInputBorder()),
+            labelText: 'Username',
+            border: OutlineInputBorder(),
+          ),
         ),
         SizedBox(height: 16),
         TextField(
           controller: _passwordController,
           obscureText: true,
           decoration: InputDecoration(
-              labelText: 'Password', border: OutlineInputBorder()),
+            labelText: 'Password',
+            border: OutlineInputBorder(),
+          ),
         ),
         SizedBox(height: 24),
         _isLoading
             ? CircularProgressIndicator()
             : ElevatedButton(
-                onPressed: () {}, // Implement login logic
+                onPressed: () => _loginHotel(context),
                 child: Text('Login'),
               ),
         SizedBox(height: 16),
@@ -206,7 +281,9 @@ class _LoginPageState extends State<LoginPage>
           onPressed: () {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => RegistrationPage()),
+              MaterialPageRoute(
+                  builder: (context) =>
+                      RegistrationPage()), // Your registration page
             );
           },
           child: Text('New User? Register Here'),

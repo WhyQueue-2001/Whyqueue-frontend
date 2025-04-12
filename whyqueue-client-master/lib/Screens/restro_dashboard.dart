@@ -1,7 +1,308 @@
+// import 'package:flutter/material.dart';
+// import 'package:firebase_database/firebase_database.dart';
+// import 'package:flutter/services.dart';
+// import 'dart:async';
+
+// class RestaurantDashboard extends StatefulWidget {
+//   @override
+//   _RestaurantDashboardState createState() => _RestaurantDashboardState();
+// }
+
+// class _RestaurantDashboardState extends State<RestaurantDashboard> {
+//   int _selectedIndex = 0;
+//   List<Map<String, dynamic>> reservations = [];
+//   List<Map<String, dynamic>> queueReservations = [];
+//   Map<String, TextEditingController> timeControllers = {};
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _fetchReservations();
+//     _fetchQueueReservations();
+//   }
+
+//   // 🔹 Fetch reservations (Only reservations that are NOT in queue)
+//   void _fetchReservations() {
+//     DatabaseReference dbRef =
+//         FirebaseDatabase.instance.ref().child("reservations");
+//     dbRef.onValue.listen((event) {
+//       if (event.snapshot.value != null) {
+//         Map<dynamic, dynamic> data =
+//             event.snapshot.value as Map<dynamic, dynamic>;
+//         List<Map<String, dynamic>> tempList = [];
+
+//         data.forEach((key, value) {
+//           if (value["status"] != "Queue") {
+//             tempList.add({"id": key, ...value});
+//             timeControllers[key] = TextEditingController();
+//           }
+//         });
+
+//         setState(() {
+//           reservations = tempList;
+//         });
+//       }
+//     });
+//   }
+
+//   // 🔹 Fetch queue reservations (Only those with "Queue" status)
+//   void _fetchQueueReservations() {
+//     DatabaseReference dbRef =
+//         FirebaseDatabase.instance.ref().child("reservations");
+//     dbRef.onValue.listen((event) {
+//       if (event.snapshot.value != null) {
+//         Map<dynamic, dynamic> data =
+//             event.snapshot.value as Map<dynamic, dynamic>;
+//         List<Map<String, dynamic>> tempList = [];
+
+//         data.forEach((key, value) {
+//           if (value["status"] == "Queue") {
+//             tempList.add({"id": key, ...value});
+//           }
+//         });
+
+//         setState(() {
+//           queueReservations = tempList;
+//         });
+//       }
+//     });
+//   }
+
+//   // 🔹 Update reservation status in Firebase (Assign -> Queue)
+//   void _updateReservationStatus(String id, String name, String time) {
+//     DatabaseReference dbRef =
+//         FirebaseDatabase.instance.ref().child("reservations");
+
+//     dbRef.child(id).update({
+//       "name": name,
+//       "time": time,
+//       "status": "Queue",
+//     });
+
+//     _fetchQueueReservations(); // Refresh queue list
+//   }
+
+//   // 🔹 Add a new user entry to Firebase as "Queue"
+//   void _addUserToQueue(String name, int numberOfPeople, String waitingTime) {
+//     DatabaseReference dbRef =
+//         FirebaseDatabase.instance.ref().child("reservations");
+
+//     String newId =
+//         dbRef.push().key ?? DateTime.now().millisecondsSinceEpoch.toString();
+
+//     dbRef.child(newId).set({
+//       "name": name,
+//       "numberOfPeople": numberOfPeople,
+//       "time": waitingTime,
+//       "restaurantName": "New Entry", // You can modify or remove this
+//       "status": "Queue",
+//     }).then((_) {
+//       _fetchQueueReservations();
+//       Navigator.pop(context); // Close the dialog box
+//     });
+//   }
+
+//   void _onItemTapped(int index) {
+//     setState(() {
+//       _selectedIndex = index;
+//     });
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(title: Text("Restaurant Dashboard")),
+//       body: _selectedIndex == 0 ? _buildAssignTab() : _buildQueueTab(),
+//       bottomNavigationBar: BottomNavigationBar(
+//         items: const <BottomNavigationBarItem>[
+//           BottomNavigationBarItem(
+//               icon: Icon(Icons.assignment), label: 'Assign'),
+//           BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Queue'),
+//         ],
+//         currentIndex: _selectedIndex,
+//         onTap: _onItemTapped,
+//       ),
+//     );
+//   }
+
+//   // 🔹 Assign Tab: Enter time and move to queue
+//   Widget _buildAssignTab() {
+//     return Column(
+//       children: [
+//         Expanded(
+//           child: ListView(
+//             children: reservations.map((reservation) {
+//               return Card(
+//                 margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+//                 child: Padding(
+//                   padding: const EdgeInsets.all(10.0),
+//                   child: Column(
+//                     crossAxisAlignment: CrossAxisAlignment.start,
+//                     children: [
+//                       Text(reservation["name"] ?? "Unknown",
+//                           style: TextStyle(
+//                               fontSize: 18, fontWeight: FontWeight.bold)),
+//                       Text(
+//                           "${reservation["numberOfPeople"]} people at ${reservation["restaurantName"]}"),
+//                       SizedBox(height: 10),
+//                       Row(
+//                         children: [
+//                           Expanded(
+//                             child: TextField(
+//                               controller: timeControllers[reservation["id"]],
+//                               keyboardType: TextInputType.number,
+//                               inputFormatters: [
+//                                 FilteringTextInputFormatter.digitsOnly,
+//                                 LengthLimitingTextInputFormatter(4),
+//                                 TimeInputFormatter(), // Custom formatter for hh:mm
+//                               ],
+//                               decoration: InputDecoration(
+//                                 hintText: "HH:MM",
+//                                 border: OutlineInputBorder(),
+//                               ),
+//                             ),
+//                           ),
+//                           SizedBox(width: 10),
+//                           IconButton(
+//                             icon: Icon(Icons.check, color: Colors.green),
+//                             onPressed: () {
+//                               String time =
+//                                   timeControllers[reservation["id"]]?.text ??
+//                                       "00:00";
+//                               _updateReservationStatus(
+//                                   reservation["id"], reservation["name"], time);
+//                             },
+//                           ),
+//                         ],
+//                       ),
+//                     ],
+//                   ),
+//                 ),
+//               );
+//             }).toList(),
+//           ),
+//         ),
+//         SizedBox(height: 10),
+//         ElevatedButton(
+//           onPressed: () {
+//             _showAddUserDialog();
+//           },
+//           child: Text("Add User"),
+//         ),
+//         SizedBox(height: 20),
+//       ],
+//     );
+//   }
+
+//   // 🔹 Queue Tab: Fetch queue reservations from Firebase and display rank
+//   Widget _buildQueueTab() {
+//     return ListView(
+//       children: queueReservations.asMap().entries.map((entry) {
+//         int index = entry.key + 1; // Rank in queue
+//         Map<String, dynamic> reservation = entry.value;
+
+//         return Card(
+//           margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+//           child: ListTile(
+//             leading: CircleAvatar(
+//               child: Text(index.toString(),
+//                   style: TextStyle(fontWeight: FontWeight.bold)),
+//             ),
+//             title: Text(reservation["name"] ?? "No Name",
+//                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+//             subtitle:
+//                 Text("Assigned Time: ${reservation["time"] ?? "Not Set"}"),
+//           ),
+//         );
+//       }).toList(),
+//     );
+//   }
+
+//   // 🔹 Show Add User Dialog
+//   void _showAddUserDialog() {
+//     TextEditingController nameController = TextEditingController();
+//     TextEditingController peopleController = TextEditingController();
+//     TextEditingController timeController = TextEditingController();
+
+//     showDialog(
+//       context: context,
+//       builder: (context) {
+//         return AlertDialog(
+//           title: Text("Add New User"),
+//           content: Column(
+//             mainAxisSize: MainAxisSize.min,
+//             children: [
+//               TextField(
+//                 controller: nameController,
+//                 decoration: InputDecoration(labelText: "Name"),
+//               ),
+//               TextField(
+//                 controller: peopleController,
+//                 keyboardType: TextInputType.number,
+//                 decoration: InputDecoration(labelText: "Number of People"),
+//               ),
+//               TextField(
+//                 controller: timeController,
+//                 keyboardType: TextInputType.number,
+//                 inputFormatters: [
+//                   FilteringTextInputFormatter.digitsOnly,
+//                   LengthLimitingTextInputFormatter(4),
+//                   TimeInputFormatter(),
+//                 ],
+//                 decoration: InputDecoration(labelText: "Waiting Time (HH:MM)"),
+//               ),
+//             ],
+//           ),
+//           actions: [
+//             TextButton(
+//               onPressed: () => Navigator.pop(context),
+//               child: Text("Cancel"),
+//             ),
+//             ElevatedButton(
+//               onPressed: () {
+//                 _addUserToQueue(
+//                   nameController.text,
+//                   int.tryParse(peopleController.text) ?? 1,
+//                   timeController.text,
+//                 );
+//               },
+//               child: Text("Add"),
+//             ),
+//           ],
+//         );
+//       },
+//     );
+//   }
+// }
+
+// class TimeInputFormatter extends TextInputFormatter {
+//   @override
+//   TextEditingValue formatEditUpdate(
+//       TextEditingValue oldValue, TextEditingValue newValue) {
+//     String text = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+//     if (text.length > 4) text = text.substring(0, 4);
+
+//     String formatted = text;
+//     if (text.length >= 3) {
+//       formatted = "${text.substring(0, 2)}:${text.substring(2)}";
+//     }
+
+//     return TextEditingValue(
+//       text: formatted,
+//       selection: TextSelection.collapsed(offset: formatted.length),
+//     );
+//   }
+// }
+
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/services.dart';
 
 class RestaurantDashboard extends StatefulWidget {
+  Map<String, dynamic>? hotelData; // Receiving hotel data via constructor
+
+  RestaurantDashboard({Key? key, this.hotelData}) : super(key: key);
+
   @override
   _RestaurantDashboardState createState() => _RestaurantDashboardState();
 }
@@ -9,13 +310,19 @@ class RestaurantDashboard extends StatefulWidget {
 class _RestaurantDashboardState extends State<RestaurantDashboard> {
   int _selectedIndex = 0;
   List<Map<String, dynamic>> reservations = [];
+  List<Map<String, dynamic>> queueReservations = [];
+  Map<String, TextEditingController> timeControllers = {};
+
+  String get hotelName => widget.hotelData?['restaurantName'] ?? 'Unknown';
 
   @override
   void initState() {
     super.initState();
     _fetchReservations();
+    _fetchQueueReservations();
   }
 
+  // 🔹 Fetch reservations filtered by hotel name (non-queue)
   void _fetchReservations() {
     DatabaseReference dbRef =
         FirebaseDatabase.instance.ref().child("reservations");
@@ -24,13 +331,84 @@ class _RestaurantDashboardState extends State<RestaurantDashboard> {
         Map<dynamic, dynamic> data =
             event.snapshot.value as Map<dynamic, dynamic>;
         List<Map<String, dynamic>> tempList = [];
+
         data.forEach((key, value) {
-          tempList.add({"id": key, ...value});
+          if (value["restaurantName"] == hotelName &&
+              value["status"] != "Queue") {
+            tempList.add({"id": key, ...value});
+            timeControllers[key] = TextEditingController();
+          }
         });
+
         setState(() {
           reservations = tempList;
         });
       }
+    });
+  }
+
+  void _fetchQueueReservations() {
+    DatabaseReference dbRef =
+        FirebaseDatabase.instance.ref().child("reservations");
+
+    dbRef.onValue.listen((event) {
+      if (event.snapshot.value != null) {
+        Map<dynamic, dynamic> data =
+            event.snapshot.value as Map<dynamic, dynamic>;
+        List<Map<String, dynamic>> tempList = [];
+
+        data.forEach((key, value) {
+          if (value["restaurantName"] == hotelName &&
+              value["status"] == "Queue") {
+            // Cast all keys in 'value' map to String
+            final reservation = Map<String, dynamic>.from(value);
+            reservation["id"] = key.toString(); // Add ID from Firebase
+            tempList.add(reservation);
+          }
+        });
+
+        // Sort by the order of entry (Firebase keys are generally timestamp-based)
+        tempList.sort((a, b) => a["id"].compareTo(b["id"]));
+
+        setState(() {
+          queueReservations = tempList;
+        });
+      }
+    });
+  }
+
+  // 🔹 Update reservation status (Assign -> Queue)
+  void _updateReservationStatus(String id, String name, String time) {
+    DatabaseReference dbRef =
+        FirebaseDatabase.instance.ref().child("reservations");
+
+    dbRef.child(id).update({
+      "name": name,
+      "time": time,
+      "restaurantName": hotelName,
+      "status": "Queue",
+    });
+
+    _fetchQueueReservations();
+  }
+
+  // 🔹 Add a new user entry filtered by hotel name
+  void _addUserToQueue(String name, int numberOfPeople, String waitingTime) {
+    DatabaseReference dbRef =
+        FirebaseDatabase.instance.ref().child("reservations");
+
+    String newId =
+        dbRef.push().key ?? DateTime.now().millisecondsSinceEpoch.toString();
+
+    dbRef.child(newId).set({
+      "name": name,
+      "numberOfPeople": numberOfPeople,
+      "time": waitingTime,
+      "restaurantName": hotelName, // Associate with current hotel
+      "status": "Queue",
+    }).then((_) {
+      _fetchQueueReservations();
+      Navigator.pop(context); // Close the dialog box
     });
   }
 
@@ -42,52 +420,184 @@ class _RestaurantDashboardState extends State<RestaurantDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    List<String> statuses = ["Assign", "Pending", "Started"];
-
     return Scaffold(
-      appBar: AppBar(title: Text("Restaurant Dashboard")),
-      body: ListView(
-        children: reservations
-            .where((res) =>
-                res["status"] == statuses[_selectedIndex] ||
-                res["status"] == null)
-            .map((reservation) => ListTile(
-                  title: Text(reservation["name"] ?? "Unknown"),
-                  subtitle: Text(
-                      "${reservation["numberOfPeople"]} people at ${reservation["restaurantName"]}"),
-                  trailing: DropdownButton<String>(
-                    value: reservation["status"] ?? "Assign",
-                    onChanged: (String? newValue) {
-                      if (newValue != null) {
-                        DatabaseReference dbRef = FirebaseDatabase.instance
-                            .ref()
-                            .child("reservations");
-                        dbRef
-                            .child(reservation["id"])
-                            .update({"status": newValue});
-                      }
-                    },
-                    items: statuses.map((status) {
-                      return DropdownMenuItem<String>(
-                        value: status,
-                        child: Text(status),
-                      );
-                    }).toList(),
-                  ),
-                ))
-            .toList(),
-      ),
+      appBar: AppBar(title: Text("$hotelName Dashboard")),
+      body: _selectedIndex == 0 ? _buildAssignTab() : _buildQueueTab(),
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
               icon: Icon(Icons.assignment), label: 'Assign'),
-          BottomNavigationBarItem(icon: Icon(Icons.pending), label: 'Pending'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.play_arrow), label: 'Started'),
+          BottomNavigationBarItem(icon: Icon(Icons.list), label: 'Queue'),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
       ),
+    );
+  }
+
+  // 🔹 Assign Tab: Filtered reservations
+  Widget _buildAssignTab() {
+    return Column(
+      children: [
+        Expanded(
+          child: ListView(
+            children: reservations.map((reservation) {
+              return Card(
+                margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(reservation["name"] ?? "Unknown",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(
+                          "${reservation["numberOfPeople"]} people at ${reservation["restaurantName"]}"),
+                      SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: timeControllers[reservation["id"]],
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                                LengthLimitingTextInputFormatter(4),
+                                TimeInputFormatter(), // Custom formatter for hh:mm
+                              ],
+                              decoration: InputDecoration(
+                                hintText: "HH:MM",
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          IconButton(
+                            icon: Icon(Icons.check, color: Colors.green),
+                            onPressed: () {
+                              String time =
+                                  timeControllers[reservation["id"]]?.text ??
+                                      "00:00";
+                              _updateReservationStatus(
+                                  reservation["id"], reservation["name"], time);
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+        SizedBox(height: 10),
+        ElevatedButton(
+          onPressed: () {
+            _showAddUserDialog();
+          },
+          child: Text("Add User"),
+        ),
+        SizedBox(height: 20),
+      ],
+    );
+  }
+
+  // 🔹 Queue Tab: Filtered queue reservations
+  Widget _buildQueueTab() {
+    return ListView(
+      children: queueReservations.asMap().entries.map((entry) {
+        int index = entry.key + 1; // Rank in queue
+        Map<String, dynamic> reservation = entry.value;
+
+        return Card(
+          margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          child: ListTile(
+            leading: CircleAvatar(
+              child: Text(index.toString(),
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+            title: Text(reservation["name"] ?? "No Name",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            subtitle:
+                Text("Assigned Time: ${reservation["time"] ?? "Not Set"}"),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  // 🔹 Show Add User Dialog
+  void _showAddUserDialog() {
+    TextEditingController nameController = TextEditingController();
+    TextEditingController peopleController = TextEditingController();
+    TextEditingController timeController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Add New User"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(labelText: "Name"),
+              ),
+              TextField(
+                controller: peopleController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(labelText: "Number of People"),
+              ),
+              TextField(
+                controller: timeController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(4),
+                  TimeInputFormatter(),
+                ],
+                decoration: InputDecoration(labelText: "Waiting Time (HH:MM)"),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                _addUserToQueue(
+                  nameController.text,
+                  int.tryParse(peopleController.text) ?? 1,
+                  timeController.text,
+                );
+              },
+              child: Text("Add"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class TimeInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    String text = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (text.length > 4) text = text.substring(0, 4);
+
+    String formatted = text.length >= 3
+        ? "${text.substring(0, 2)}:${text.substring(2)}"
+        : text;
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }
