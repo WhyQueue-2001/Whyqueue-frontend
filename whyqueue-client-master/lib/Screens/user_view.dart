@@ -143,7 +143,7 @@ class _UserLandingPageState extends State<UserLandingPage> {
         stream: _dbRef.onValue,
         builder: (context, AsyncSnapshot<DatabaseEvent> snapshot) {
           if (!snapshot.hasData || snapshot.data!.snapshot.value == null) {
-            return Center(
+            return const Center(
               child: Text(
                 "No data available",
                 style: TextStyle(fontSize: 18),

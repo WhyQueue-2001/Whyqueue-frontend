@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 
 class ReservationScreen extends StatefulWidget {
+  final String hotelName;
+
+  const ReservationScreen({super.key, required this.hotelName});
   @override
   _ReservationScreenState createState() => _ReservationScreenState();
 }
@@ -11,6 +14,13 @@ class _ReservationScreenState extends State<ReservationScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _peopleController = TextEditingController();
   final TextEditingController _restaurantController = TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+    // Initialize Firebase Database
+    print("Widget: widget.hotelName");
+    print("Widget: ${widget.hotelName}");
+  }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
@@ -25,7 +35,7 @@ class _ReservationScreenState extends State<ReservationScreen> {
       Map<String, dynamic> reservationData = {
         "name": _nameController.text,
         "numberOfPeople": _peopleController.text,
-        "restaurantName": _restaurantController.text,
+        "restaurantName": widget.hotelName,
       };
 
       // Store data in Firebase
@@ -73,13 +83,6 @@ class _ReservationScreenState extends State<ReservationScreen> {
                 validator: (value) =>
                     value!.isEmpty ? 'Please enter the number of people' : null,
               ),
-              TextFormField(
-                controller: _restaurantController,
-                decoration: InputDecoration(labelText: 'Restaurant Name'),
-                validator: (value) =>
-                    value!.isEmpty ? 'Please enter a restaurant name' : null,
-              ),
-              SizedBox(height: 20),
               Center(
                 child: ElevatedButton(
                   onPressed: _submitForm,

@@ -347,10 +347,10 @@ class _RestaurantDashboardState extends State<RestaurantDashboard> {
     });
   }
 
-  // 🔹 Fetch queue reservations filtered by hotel name
   void _fetchQueueReservations() {
     DatabaseReference dbRef =
         FirebaseDatabase.instance.ref().child("reservations");
+
     dbRef.onValue.listen((event) {
       if (event.snapshot.value != null) {
         Map<dynamic, dynamic> data =
@@ -360,11 +360,15 @@ class _RestaurantDashboardState extends State<RestaurantDashboard> {
         data.forEach((key, value) {
           if (value["restaurantName"] == hotelName &&
               value["status"] == "Queue") {
-
-            tempList.add({"id": key, ...value});
-            print("templist : ${tempList.first}");
+            // Cast all keys in 'value' map to String
+            final reservation = Map<String, dynamic>.from(value);
+            reservation["id"] = key.toString(); // Add ID from Firebase
+            tempList.add(reservation);
           }
         });
+
+        // Sort by the order of entry (Firebase keys are generally timestamp-based)
+        tempList.sort((a, b) => a["id"].compareTo(b["id"]));
 
         setState(() {
           queueReservations = tempList;

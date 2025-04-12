@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:whyqueue/User/user_booking.dart';
 
 class QueueReservationsScreen extends StatefulWidget {
   final String hotelName;
@@ -20,7 +21,6 @@ class _QueueReservationsScreenState extends State<QueueReservationsScreen> {
     _fetchQueueReservations();
   }
 
-  // Fetch reservations that are in Queue state
   void _fetchQueueReservations() {
     DatabaseReference dbRef =
         FirebaseDatabase.instance.ref().child("reservations");
@@ -34,9 +34,15 @@ class _QueueReservationsScreenState extends State<QueueReservationsScreen> {
         data.forEach((key, value) {
           if (value["restaurantName"] == widget.hotelName &&
               value["status"] == "Queue") {
-            tempList.add({"id": key, ...value});
+            // Cast all keys in 'value' map to String
+            final reservation = Map<String, dynamic>.from(value);
+            reservation["id"] = key.toString(); // Add ID from Firebase
+            tempList.add(reservation);
           }
         });
+
+        // Sort by the order of entry (Firebase keys are generally timestamp-based)
+        tempList.sort((a, b) => a["id"].compareTo(b["id"]));
 
         setState(() {
           queueReservations = tempList;
@@ -97,7 +103,7 @@ class _QueueReservationsScreenState extends State<QueueReservationsScreen> {
                         ),
                         SizedBox(height: 5),
                         Text(
-                          "👤 Customer: ${reservation["customerName"] ?? "No Name"}",
+                          "👤 Customer: ${reservation["name"] ?? "No Name"}",
                           style:
                               TextStyle(fontSize: 14, color: Colors.grey[700]),
                         ),
@@ -114,7 +120,7 @@ class _QueueReservationsScreenState extends State<QueueReservationsScreen> {
               padding: const EdgeInsets.all(12.0),
               child: ElevatedButton(
                 onPressed: () {
-                  _handlePayment();
+                  _handlePayment(widget.hotelName);
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.deepPurple,
@@ -134,11 +140,13 @@ class _QueueReservationsScreenState extends State<QueueReservationsScreen> {
   }
 
   // Handle Payment Logic
-  void _handlePayment() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text("Proceeding to payment..."),
-        duration: Duration(seconds: 2),
+  void _handlePayment(String hotelName) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ReservationScreen(
+          hotelName: hotelName,
+        ),
       ),
     );
   }

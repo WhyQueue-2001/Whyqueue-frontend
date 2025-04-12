@@ -160,7 +160,8 @@ class _LoginPageState extends State<LoginPage>
                 Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => ReservationScreen()));
+                        builder: (context) =>
+                            ReservationScreen(hotelName: "")));
               },
               child: Text(" Book your Hotels"),
             ),
