@@ -12,6 +12,8 @@ class RestaurantInputScreen extends StatefulWidget {
 
 class _RestaurantInputScreenState extends State<RestaurantInputScreen> {
   final _formKey = GlobalKey<FormState>();
+  List<int> tableOptions = [2, 4, 6, 8, 10, 12];
+  List<int> selectedTables = [];
 
   TextEditingController nameController = TextEditingController();
   TextEditingController addressController = TextEditingController();
@@ -40,6 +42,40 @@ class _RestaurantInputScreenState extends State<RestaurantInputScreen> {
     return List.generate(length, (index) => chars[random.nextInt(chars.length)])
         .join();
   }
+  Widget buildMultiSelectTables() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Select Table Sizes",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          Wrap(
+            spacing: 10.0,
+            children: tableOptions.map((table) {
+              return FilterChip(
+                label: Text("$table Seater"),
+                selected: selectedTables.contains(table),
+                onSelected: (bool selected) {
+                  setState(() {
+                    if (selected) {
+                      selectedTables.add(table);
+                    } else {
+                      selectedTables.remove(table);
+                    }
+                  });
+                },
+                selectedColor: Colors.deepPurple.shade200,
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
@@ -79,6 +115,7 @@ class _RestaurantInputScreenState extends State<RestaurantInputScreen> {
             "fssaiNumber": fssaiController.text,
             "username": username,
             "password": password,
+            "tableSizes": selectedTables,
           };
 
           await dbRef.child(newRestaurantKey).set(restaurantData);
@@ -153,6 +190,7 @@ class _RestaurantInputScreenState extends State<RestaurantInputScreen> {
                           otherCuisineController,
                           icon: Icons.fastfood,
                         ),
+                       buildMultiSelectTables(),
                       buildTextField("FSSAI Number", fssaiController,
                           icon: Icons.verified, isNumeric: true),
                       SizedBox(height: 20),
