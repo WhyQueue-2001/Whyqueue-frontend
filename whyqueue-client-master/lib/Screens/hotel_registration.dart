@@ -14,6 +14,9 @@ class RestaurantInputScreen extends StatefulWidget {
 class _RestaurantInputScreenState extends State<RestaurantInputScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  List<int> tableOptions = [2, 4, 6, 8, 10, 12];
+  List<int> selectedTables = [];
+
   TextEditingController nameController = TextEditingController();
   TextEditingController addressController = TextEditingController();
   TextEditingController contactController = TextEditingController();
@@ -42,61 +45,40 @@ class _RestaurantInputScreenState extends State<RestaurantInputScreen> {
         .join();
   }
 
-  // void _submitForm() {
-  //   if (_formKey.currentState!.validate()) {
-  //     List<String> finalCuisines = List.from(selectedCuisines);
-  //     if (showOtherCuisineField && otherCuisineController.text.isNotEmpty) {
-  //       finalCuisines.add(otherCuisineController.text);
-  //     }
+  Widget buildMultiSelectTables() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Select Table Sizes",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          Wrap(
+            spacing: 10.0,
+            children: tableOptions.map((table) {
+              return FilterChip(
+                label: Text("$table Seater"),
+                selected: selectedTables.contains(table),
+                onSelected: (bool selected) {
+                  setState(() {
+                    if (selected) {
+                      selectedTables.add(table);
+                    } else {
+                      selectedTables.remove(table);
+                    }
+                  });
+                },
+                selectedColor: Colors.deepPurple.shade200,
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
 
-  //     // Create a reference to Firebase Database
-  //     DatabaseReference dbRef =
-  //         FirebaseDatabase.instance.ref().child("restaurants");
-
-  //     // Generate a unique ID for each restaurant
-  //     String newRestaurantKey = dbRef.push().key!;
-
-  //     // Generate unique username and password
-  //     String username = "user_" + _generateRandomString(8);
-  //     String password = _generateRandomString(12);
-
-  //     // Prepare data
-  //     Map<String, dynamic> restaurantData = {
-  //       "restaurantName": nameController.text,
-  //       "address": addressController.text,
-  //       "contact": contactController.text,
-  //       "email": emailController.text,
-  //       "cuisines": finalCuisines,
-  //       "fssaiNumber": fssaiController.text,
-  //       "username": username,
-  //       "password": password,
-  //     };
-
-  //     // Store data in Firebase
-  //     dbRef.child(newRestaurantKey).set(restaurantData).then((_) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(
-  //             content: Text("Data saved to Firebase!"),
-  //             backgroundColor: Colors.green),
-  //       );
-
-  //       // Print username and password to console
-  //       print("Generated Username: $username");
-  //       print("Generated Password: $password");
-
-  //       // Navigate to Login Screen
-  //       Navigator.pushReplacement(
-  //         context,
-  //         MaterialPageRoute(builder: (context) => LoginPage()),
-  //       );
-  //     }).catchError((error) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(
-  //             content: Text("Failed: $error"), backgroundColor: Colors.red),
-  //       );
-  //     });
-  //   }
-  // }
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       List<String> finalCuisines = List.from(selectedCuisines);
@@ -139,6 +121,7 @@ class _RestaurantInputScreenState extends State<RestaurantInputScreen> {
             "fssaiNumber": fssaiController.text,
             "username": username,
             "password": password,
+            "tableSizes": selectedTables,
           };
 
           await dbRef.child(newRestaurantKey).set(restaurantData);
@@ -209,6 +192,7 @@ class _RestaurantInputScreenState extends State<RestaurantInputScreen> {
                         isNumeric: true),
                     buildTextField("Email", emailController, isEmail: true),
                     buildMultiSelectCuisines(),
+                    buildMultiSelectTables(),
                     if (showOtherCuisineField)
                       buildTextField(
                           "Enter Your Cuisine", otherCuisineController),
