@@ -1,14 +1,14 @@
 {
   "project_info": {
-    "project_number": "234330473081",
-    "firebase_url": "https://whyqueue-ca931-default-rtdb.firebaseio.com",
-    "project_id": "whyqueue-ca931",
-    "storage_bucket": "whyqueue-ca931.firebasestorage.app"
+    "project_number": "1018152873890",
+    "firebase_url": "https://whyqueue-a1609-default-rtdb.firebaseio.com",
+    "project_id": "whyqueue-a1609",
+    "storage_bucket": "whyqueue-a1609.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:234330473081:android:949eea6fad8e5f78784aa8",
+        "mobilesdk_app_id": "1:1018152873890:android:9fb1243a3e6ff7eff84cfb",
         "android_client_info": {
           "package_name": "com.example.whyqueue"
         }
@@ -16,7 +16,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBZx8J4bo9q9ETCn19n7yxevq5UjJelcw8"
+          "current_key": "AIzaSyADap_L9TJewqVv0PoFJdbSb0AvfqVBU1Y"
         }
       ],
       "services": {

@@ -1,5 +1,7 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:whyqueue/Screens/waititngScreen.dart';
 
 class ReservationScreen extends StatefulWidget {
   final String hotelName;
@@ -14,46 +16,63 @@ class _ReservationScreenState extends State<ReservationScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _peopleController = TextEditingController();
   final TextEditingController _restaurantController = TextEditingController();
+  String? _fcmToken;
   @override
   void initState() {
     super.initState();
     // Initialize Firebase Database
     print("Widget: widget.hotelName");
     print("Widget: ${widget.hotelName}");
+    _getFcmToken();
+  }
+
+  void _getFcmToken() async {
+    try {
+      String? token = await FirebaseMessaging.instance.getToken();
+      print("FCM Token: $token");
+      setState(() {
+        _fcmToken = token;
+      });
+    } catch (e) {
+      print("Error getting FCM token: $e");
+    }
   }
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      // Create a reference to Firebase Database
       DatabaseReference dbRef =
           FirebaseDatabase.instance.ref().child("reservations");
-
-      // Generate a unique ID for each reservation
       String newReservationKey = dbRef.push().key!;
 
-      // Prepare data
       Map<String, dynamic> reservationData = {
         "name": _nameController.text,
         "numberOfPeople": _peopleController.text,
         "restaurantName": widget.hotelName,
+        "fcmToken": _fcmToken,
       };
 
-      // Store data in Firebase
       dbRef.child(newReservationKey).set(reservationData).then((_) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text("Reservation saved to Firebase!"),
-              backgroundColor: Colors.green),
+            content: Text("Reservation saved to Firebase!"),
+            backgroundColor: Colors.green,
+          ),
         );
-
-        // Clear the form fields
         _nameController.clear();
         _peopleController.clear();
-        _restaurantController.clear();
+
+        // Delay for a short moment (optional)
+        Future.delayed(Duration(milliseconds: 500), () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => SuccessScreen()),
+          );
+        });
       }).catchError((error) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text("Failed: $error"), backgroundColor: Colors.red),
+            content: Text("Failed: $error"),
+            backgroundColor: Colors.red,
+          ),
         );
       });
     }

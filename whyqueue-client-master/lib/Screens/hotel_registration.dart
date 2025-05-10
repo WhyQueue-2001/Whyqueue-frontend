@@ -39,13 +39,49 @@ class _RestaurantInputScreenState extends State<RestaurantInputScreen> {
     Random random = Random();
     return List.generate(length, (index) => chars[random.nextInt(chars.length)]).join();
   }
+  
+  Widget buildMultiSelectTables() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Select Table Sizes",
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          Wrap(
+            spacing: 10.0,
+            children: tableOptions.map((table) {
+              return FilterChip(
+                label: Text("$table Seater"),
+                selected: selectedTables.contains(table),
+                onSelected: (bool selected) {
+                  setState(() {
+                    if (selected) {
+                      selectedTables.add(table);
+                    } else {
+                      selectedTables.remove(table);
+                    }
+                  });
+                },
+                selectedColor: Colors.deepPurple.shade200,
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       String email = emailController.text;
       String username = "user_" + _generateRandomString(8);
       String password = _generateRandomString(12);
-
+      print("Generated Username: $username");
+      print("Generated Password: $password");
       Map<String, dynamic> emailPayload = {
         "email": email,
         "username": username,
@@ -58,7 +94,7 @@ class _RestaurantInputScreenState extends State<RestaurantInputScreen> {
           headers: {'Content-Type': 'application/json'},
           body: json.encode(emailPayload),
         );
-
+        print("Response: ${response.body}");
         if (response.statusCode == 200) {
           DatabaseReference dbRef = FirebaseDatabase.instance.ref().child("restaurants");
           String newRestaurantKey = dbRef.push().key!;

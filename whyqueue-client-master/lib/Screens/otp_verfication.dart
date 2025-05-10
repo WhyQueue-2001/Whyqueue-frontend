@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 class OTPVerificationPage extends StatefulWidget {
-  const OTPVerificationPage({super.key});
+  const OTPVerificationPage({super.key, required String verificationId, required String phoneNumber});
 
   @override
   State<OTPVerificationPage> createState() => _OTPVerificationPageState();
