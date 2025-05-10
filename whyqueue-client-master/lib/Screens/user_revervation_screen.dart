@@ -34,14 +34,12 @@ class _QueueReservationsScreenState extends State<QueueReservationsScreen> {
         data.forEach((key, value) {
           if (value["restaurantName"] == widget.hotelName &&
               value["status"] == "Queue") {
-            // Cast all keys in 'value' map to String
             final reservation = Map<String, dynamic>.from(value);
-            reservation["id"] = key.toString(); // Add ID from Firebase
+            reservation["id"] = key.toString();
             tempList.add(reservation);
           }
         });
 
-        // Sort by the order of entry (Firebase keys are generally timestamp-based)
         tempList.sort((a, b) => a["id"].compareTo(b["id"]));
 
         setState(() {
@@ -54,9 +52,10 @@ class _QueueReservationsScreenState extends State<QueueReservationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 244, 248, 239), // Light green background
       appBar: AppBar(
         title: Text("${widget.hotelName} - Queue Reservations"),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: const Color.fromARGB(255, 244, 248, 239),// Dark green app bar
       ),
       body: queueReservations.isEmpty
           ? Center(
@@ -86,7 +85,7 @@ class _QueueReservationsScreenState extends State<QueueReservationsScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.deepPurple,
+                            color: Colors.green[800],
                           ),
                         ),
                         SizedBox(height: 5),
@@ -113,8 +112,6 @@ class _QueueReservationsScreenState extends State<QueueReservationsScreen> {
                 );
               },
             ),
-
-      // Pay Now Button
       bottomNavigationBar: queueReservations.isNotEmpty
           ? Padding(
               padding: const EdgeInsets.all(12.0),
@@ -123,7 +120,7 @@ class _QueueReservationsScreenState extends State<QueueReservationsScreen> {
                   _handlePayment(widget.hotelName);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple,
+                  backgroundColor: const Color.fromARGB(255, 111, 141, 92) ,// Dark green button
                   padding: EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -139,7 +136,6 @@ class _QueueReservationsScreenState extends State<QueueReservationsScreen> {
     );
   }
 
-  // Handle Payment Logic
   void _handlePayment(String hotelName) {
     Navigator.push(
       context,

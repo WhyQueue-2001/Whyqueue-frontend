@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:whyqueue/Screens/Login.dart';
 import 'package:http/http.dart' as http;
 
 class RestaurantInputScreen extends StatefulWidget {
@@ -12,78 +11,37 @@ class RestaurantInputScreen extends StatefulWidget {
 
 class _RestaurantInputScreenState extends State<RestaurantInputScreen> {
   final _formKey = GlobalKey<FormState>();
+
   List<int> tableOptions = [2, 4, 6, 8, 10, 12];
   List<int> selectedTables = [];
+
+  List<String> cuisines = [
+    "North Indian",
+    "Chinese",
+    "Fast Food",
+    "South Indian",
+    "Biryani",
+    "Dessert"
+  ];
+  List<String> selectedCuisines = [];
+
+  TextEditingController cuisineInputController = TextEditingController();
+  TextEditingController tableInputController = TextEditingController();
 
   TextEditingController nameController = TextEditingController();
   TextEditingController addressController = TextEditingController();
   TextEditingController contactController = TextEditingController();
   TextEditingController fssaiController = TextEditingController();
   TextEditingController emailController = TextEditingController();
-  TextEditingController otherCuisineController = TextEditingController();
-
-  List<String> selectedCuisines = [];
-  bool showOtherCuisineField = false;
-
-  final List<String> cuisines = [
-    "North Indian",
-    "Chinese",
-    "Fast Food",
-    "South Indian",
-    "Biryani",
-    "Dessert",
-    "Other"
-  ];
 
   String _generateRandomString(int length) {
-    const chars =
-        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     Random random = Random();
-    return List.generate(length, (index) => chars[random.nextInt(chars.length)])
-        .join();
+    return List.generate(length, (index) => chars[random.nextInt(chars.length)]).join();
   }
-  Widget buildMultiSelectTables() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Select Table Sizes",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          Wrap(
-            spacing: 10.0,
-            children: tableOptions.map((table) {
-              return FilterChip(
-                label: Text("$table Seater"),
-                selected: selectedTables.contains(table),
-                onSelected: (bool selected) {
-                  setState(() {
-                    if (selected) {
-                      selectedTables.add(table);
-                    } else {
-                      selectedTables.remove(table);
-                    }
-                  });
-                },
-                selectedColor: Colors.deepPurple.shade200,
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      List<String> finalCuisines = List.from(selectedCuisines);
-      if (showOtherCuisineField && otherCuisineController.text.isNotEmpty) {
-        finalCuisines.add(otherCuisineController.text);
-      }
-
       String email = emailController.text;
       String username = "user_" + _generateRandomString(8);
       String password = _generateRandomString(12);
@@ -96,14 +54,13 @@ class _RestaurantInputScreenState extends State<RestaurantInputScreen> {
 
       try {
         final response = await http.post(
-          Uri.parse('https://9704-115-246-20-252.ngrok-free.app/mail/send-email'),
+          Uri.parse('https://4bd0-103-251-212-247.ngrok-free.app'),
           headers: {'Content-Type': 'application/json'},
           body: json.encode(emailPayload),
         );
 
         if (response.statusCode == 200) {
-          DatabaseReference dbRef =
-              FirebaseDatabase.instance.ref().child("restaurants");
+          DatabaseReference dbRef = FirebaseDatabase.instance.ref().child("restaurants");
           String newRestaurantKey = dbRef.push().key!;
 
           Map<String, dynamic> restaurantData = {
@@ -111,7 +68,7 @@ class _RestaurantInputScreenState extends State<RestaurantInputScreen> {
             "address": addressController.text,
             "contact": contactController.text,
             "email": email,
-            "cuisines": finalCuisines,
+            "cuisines": selectedCuisines,
             "fssaiNumber": fssaiController.text,
             "username": username,
             "password": password,
@@ -121,32 +78,44 @@ class _RestaurantInputScreenState extends State<RestaurantInputScreen> {
           await dbRef.child(newRestaurantKey).set(restaurantData);
 
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Email sent and data saved successfully!"),
-              backgroundColor: Colors.green,
-            ),
+            SnackBar(content: Text("Email sent and data saved successfully!"), backgroundColor: Colors.green),
           );
 
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => LoginPage()),
-          );
+          Navigator.pop(context);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Failed to send email: ${response.body}"),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text("Failed to send email: ${response.body}"), backgroundColor: Colors.red),
           );
         }
       } catch (error) {
-        print('Error: $error');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Failed to send email: $error"),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text("Failed to send email: $error"), backgroundColor: Colors.red),
         );
+      }
+    }
+  }
+
+  void addCuisine() {
+    final text = cuisineInputController.text.trim();
+    if (text.isNotEmpty && !cuisines.contains(text)) {
+      setState(() {
+        cuisines.add(text);
+        selectedCuisines.add(text);
+        cuisineInputController.clear();
+      });
+    }
+  }
+
+  void addTableSize() {
+    final text = tableInputController.text.trim();
+    if (text.isNotEmpty) {
+      int? size = int.tryParse(text);
+      if (size != null && !tableOptions.contains(size)) {
+        setState(() {
+          tableOptions.add(size);
+          selectedTables.add(size);
+          tableInputController.clear();
+        });
       }
     }
   }
@@ -156,58 +125,58 @@ class _RestaurantInputScreenState extends State<RestaurantInputScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Register Restaurant"),
-        backgroundColor: const Color.fromARGB(255, 115, 192, 103),
+        backgroundColor: const Color(0xFF73C067),
       ),
       body: Container(
-              color: Color(0xFFEFFFEA), // Changed from gradient to pista color
-
+        color: Color.fromARGB(255, 197, 224, 180),
         child: Center(
           child: SingleChildScrollView(
             child: Card(
               elevation: 15,
-              color: Colors.white.withOpacity(0.95),
+        color: Color(0xFFEFFFEA),
               margin: EdgeInsets.all(20),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     children: [
-                      buildTextField("Restaurant Name", nameController,
-                          icon: Icons.restaurant),
-                      buildTextField("Complete Address", addressController,
-                          icon: Icons.location_on),
-                      buildTextField("Contact Number", contactController,
-                          icon: Icons.phone, isNumeric: true),
-                      buildTextField("Email", emailController,
-                          icon: Icons.email, isEmail: true),
-                      buildMultiSelectChips(),
-                      if (showOtherCuisineField)
-                        buildTextField(
-                          "Enter Your Cuisine",
-                          otherCuisineController,
-                          icon: Icons.fastfood,
-                        ),
-                       buildMultiSelectTables(),
-                      buildTextField("FSSAI Number", fssaiController,
-                          icon: Icons.verified, isNumeric: true),
+                      buildTextField("Restaurant Name", nameController, icon: Icons.restaurant),
+                      buildTextField("Complete Address", addressController, icon: Icons.location_on),
+                      buildTextField("Contact Number", contactController, icon: Icons.phone, isNumeric: true),
+                      buildTextField("Email", emailController, icon: Icons.email, isEmail: true),
+
+                      // Cuisine Selection
+                      buildMultiSelectChips(
+                        title: "Select Cuisine(s)",
+                        options: cuisines,
+                        selected: selectedCuisines,
+                        onChanged: (value) => setState(() => selectedCuisines = value),
+                      ),
+                      buildAddOptionRow("Add Cuisine", cuisineInputController, addCuisine),
+
+                      // Table Sizes
+                      buildMultiSelectChips(
+                        title: "Select Table Sizes",
+                        options: tableOptions.map((e) => "$e Seater").toList(),
+                        selected: selectedTables.map((e) => "$e Seater").toList(),
+                        onChanged: (value) => setState(() =>
+                        selectedTables = value.map((e) => int.parse(e.split(' ')[0])).toList()),
+),
+
+                      buildAddOptionRow("Add Table Size", tableInputController, addTableSize, isNumeric: true),
+
+                      buildTextField("FSSAI Number", fssaiController, icon: Icons.verified, isNumeric: true),
                       SizedBox(height: 20),
                       ElevatedButton(
                         onPressed: _submitForm,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepPurple,
-                          padding: EdgeInsets.symmetric(
-                              vertical: 15, horizontal: 40),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          backgroundColor: const Color(0xFF73C067),
+                          padding: EdgeInsets.symmetric(vertical: 15, horizontal: 40),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: Text(
-                          "Submit",
-                          style: TextStyle(fontSize: 18, color: Colors.white),
-                        ),
+                        child: Text("Submit", style: TextStyle(fontSize: 18, color: Colors.white)),
                       )
                     ],
                   ),
@@ -221,70 +190,92 @@ class _RestaurantInputScreenState extends State<RestaurantInputScreen> {
   }
 
   Widget buildTextField(String label, TextEditingController controller,
-      {bool isNumeric = false,
-      bool isEmail = false,
-      IconData icon = Icons.text_fields}) {
+      {bool isNumeric = false, bool isEmail = false, IconData icon = Icons.text_fields}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
       child: TextFormField(
         controller: controller,
-        keyboardType: isNumeric
-            ? TextInputType.number
-            : isEmail
-                ? TextInputType.emailAddress
-                : TextInputType.text,
+        keyboardType: isNumeric ? TextInputType.number : (isEmail ? TextInputType.emailAddress : TextInputType.text),
         decoration: InputDecoration(
           prefixIcon: Icon(icon),
           labelText: label,
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         ),
         validator: (value) {
-          if (value == null || value.isEmpty) {
-            return "Please enter $label";
-          }
-          if (isEmail &&
-              !RegExp(r"^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]+")
-                  .hasMatch(value)) {
-            return "Please enter a valid email";
-          }
+          if (value == null || value.isEmpty) return "Please enter $label";
+          if (isEmail && !RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$").hasMatch(value)) return "Enter a valid email";
           return null;
         },
       ),
     );
   }
 
-  Widget buildMultiSelectChips() {
+  Widget buildMultiSelectChips({
+    required String title,
+    required List<String> options,
+    required List<String> selected,
+    required Function(List<String>) onChanged,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Select Cuisine(s)",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           Wrap(
             spacing: 8,
-            children: cuisines.map((cuisine) {
-              final selected = selectedCuisines.contains(cuisine);
+            children: options.map((option) {
+              final isSelected = selected.contains(option);
               return FilterChip(
-                label: Text(cuisine),
-                selected: selected,
-                selectedColor: Colors.deepPurple.shade200,
-                onSelected: (bool value) {
-                  setState(() {
-                    if (value) {
-                      selectedCuisines.add(cuisine);
-                      if (cuisine == "Other") showOtherCuisineField = true;
-                    } else {
-                      selectedCuisines.remove(cuisine);
-                      if (cuisine == "Other") {
-                        showOtherCuisineField = false;
-                        otherCuisineController.clear();
-                      }
-                    }
-                  });
+                label: Text(option),
+                selected: isSelected,
+                selectedColor: const Color(0xFFBEE3A5),
+                onSelected: (bool selectedNow) {
+                  List<String> updatedSelected = List.from(selected);
+                  if (selectedNow) {
+                    updatedSelected.add(option);
+                  } else {
+                    updatedSelected.remove(option);
+                  }
+                  onChanged(updatedSelected);
                 },
               );
             }).toList(),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget buildAddOptionRow(
+    String label,
+    TextEditingController controller,
+    VoidCallback onAdd, {
+    bool isNumeric = false,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20, top: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: controller,
+              keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
+              decoration: InputDecoration(
+                labelText: label,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+          SizedBox(width: 10),
+          ElevatedButton(
+            onPressed: onAdd,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF73C067),
+              shape: CircleBorder(),
+              padding: EdgeInsets.all(12),
+            ),
+            child: Icon(Icons.add, color: Colors.white),
           ),
         ],
       ),
